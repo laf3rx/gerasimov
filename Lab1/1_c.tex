@@ -1,0 +1,219 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode} 
+
+%---enable russian----
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+
+% PROBABILITY SYMBOLS
+\newcommand*\PROB\Pr 
+\DeclareMathOperator*{\EXPECT}{\mathbb{E}}
+
+% Sets, Rngs, ets 
+\newcommand{\N}{{{\mathbb N}}}
+\newcommand{\Z}{{{\mathbb Z}}}
+\newcommand{\R}{{{\mathbb R}}}
+\newcommand{\Zp}{\ints_p} % Integers modulo p
+\newcommand{\Zq}{\ints_q} % Integers modulo q
+\newcommand{\Zn}{\ints_N} % Integers modulo N
+
+% Landau 
+\newcommand{\bigO}{\mathcal{O}}
+\newcommand*{\OLandau}{\bigO}
+\newcommand*{\WLandau}{\Omega}
+\newcommand*{\xOLandau}{\widetilde{\OLandau}}
+\newcommand*{\xWLandau}{\widetilde{\WLandau}}
+\newcommand*{\TLandau}{\Theta}
+\newcommand*{\xTLandau}{\widetilde{\TLandau}}
+\newcommand{\smallo}{o} %technically, an omicron
+\newcommand{\softO}{\widetilde{\bigO}}
+\newcommand{\wLandau}{\omega}
+\newcommand{\negl}{\mathrm{negl}} 
+
+% Misc
+\newcommand{\eps}{\varepsilon}
+\newcommand{\inprod}[1]{\left\langle #1 \right\rangle}
+
+ 
+\newcommand{\handout}[5]{
+  \noindent
+  \begin{center}
+  \framebox{
+    \vbox{
+      \hbox to 5.78in { {\bf Научно-исследовательская практика} \hfill #2 }
+      \vspace{4mm}
+      \hbox to 5.78in { {\Large \hfill #5  \hfill} }
+      \vspace{2mm}
+      \hbox to 5.78in { {\em #3 \hfill #4} }
+    }
+  }
+  \end{center}
+  \vspace*{4mm}
+}
+
+\newcommand{\lecture}[4]{\handout{#1}{#2}{#3}{Scribe: #4}{Алгоритм Карацубы #1}}
+
+\newtheorem{theorem}{Теорема}
+\newtheorem{lemma}{Лемма}
+\newtheorem{definition}{Определение}
+\newtheorem{corollary}{Следствие}
+\newtheorem{fact}{Факт}
+
+% 1-inch margins
+\topmargin 0pt
+\advance \topmargin by -\headheight
+\advance \topmargin by -\headsep
+\textheight 8.9in
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.5in
+\textwidth 6.5in
+
+\parindent 0in
+\parskip 1.5ex
+
+\begin{document}
+
+\lecture{}{Лето 2025}{}{И. А. Герасимов}
+
+\section{Введение}
+В 1960 году на семинаре А.\,Н.\,Колмогорова по математическим задачам энергетики была рассмотрена задача умножения двух чисел~\cite{karatsuba1962}. На тот момент основным подходом являлось умножение в столбик, обладающее асимптотической сложностью $O(n^2)$ арифметических операций~\cite{knuth1997}. Колмогоров предположил, что $O(n^2)$ представляет собой нижнюю границу сложности для любого алгоритма умножения. Однако в 1962 году А.\,А.\,Карацуба и Ю.\,П.\,Офман разработали алгоритм, опровергший данную гипотезу, снизив сложность до $O(n^{\log_2 3}) \approx O(n^{1.585})$~\cite{karatsuba1962,knuth1997}. На сегодняшний день для чисел очень большой длины существуют более эффективные методы, такие как алгоритм Шёнхаге--Штрассена~\cite{cormen2009}, однако алгоритм Карацубы заложил основу для их развития и остаётся практически значимым для чисел средней длины.
+
+\section{Алгоритм}
+Ниже представлено формальное описание алгоритма Карацубы в виде псевдокода, основанное на оригинальной работе~\cite{karatsuba1962}. Алгоритм принимает два целых числа $u$, $v$ и основание системы счисления $sc$, возвращая их произведение.
+
+\begin{algorithm}[ph]
+	\caption{Алгоритм Карацубы для умножения}
+	\label{alg:karatsuba}
+	\textbf{Input:} Целые числа $u$, $v$, основание системы счисления $sc = 10$ \\
+	\textbf{Output:} Произведение $u \times v$
+	
+	\begin{algorithmic}[1]
+		\If{$u < sc$ или $v < sc$}
+			\State \Return $u \times v$
+		\EndIf
+		\State Определить длину $u$ и $v$ в системе счисления $sc$: $len_u$, $len_v$
+		\State $n \gets \max(len_u, len_v) // 2$
+		\State $B \gets sc^n$
+		\State Разделить $u$ на старшую часть $a$ и младшую часть $b$: $a \gets u // B$, $b \gets u \mod B$
+		\State Разделить $v$ на старшую часть $c$ и младшую часть $d$: $c \gets v // B$, $d \gets v \mod B$
+		\State $x \gets \text{karN}(a, c, sc)$
+		\State $y \gets \text{karN}(b, d, sc)$
+		\State $z \gets \text{karN}(a + b, c + d, sc)$
+		\State \Return $x \times B^2 + (z - x - y) \times B + y$
+	\end{algorithmic}
+\end{algorithm}
+
+\section{Анализ}
+В данном разделе приведены доказательства корректности и анализ сложности алгоритма Карацубы, основанные на оригинальной статье~\cite{karatsuba1962} и классической литературе~\cite{knuth1997}.
+
+\begin{theorem}[Корректность алгоритма Карацубы]
+\label{thm:correctness}
+Алгоритм Карацубы, описанный в алгоритме \ref{alg:karatsuba}, корректно вычисляет произведение двух неотрицательных целых чисел $u$ и $v$ для систем счисления $sc \in \{2, 10\}$.
+\end{theorem}
+
+\begin{proof}
+Докажем корректность методом математической индукции по длине чисел $n = \max(\lfloor \log_{sc}(u) \rfloor + 1, \lfloor \log_{sc}(v) \rfloor + 1)$.
+
+\textbf{База индукции.} Если $u < sc$ или $v < sc$, числа имеют длину не более одной цифры в системе счисления $sc$. Алгоритм возвращает $u \cdot v$, что тривиально корректно.
+
+\textbf{Индукционный переход.} Предположим, что алгоритм корректен для чисел длиной менее $n$. Рассмотрим числа $u$ и $v$ длиной не более $n$. Алгоритм выполняет следующие шаги:
+\begin{enumerate}
+    \item Вычисляет $n' = \max(len_u, len_v) // 2$, где $len_u = \lfloor \log_{sc}(u) \rfloor + 1$ (или $1$, если $u = 0$), аналогично для $len_v$.
+    \item Задаёт основание разбиения $B = sc^{n'}$.
+    \item Разбивает $u = a \cdot B + b$ и $v = c \cdot B + d$, где $a = u // B$, $b = u \mod B$, $c = v // B$, $d = v \mod B$.
+    \item Рекурсивно вычисляет $x = a \cdot c$, $y = b \cdot d$, $z = (a + b) \cdot (c + d)$.
+    \item Возвращает $x \cdot B^2 + (z - x - y) \cdot B + y$.
+\end{enumerate}
+
+Покажем, что результат равен $u \cdot v$. Выразим произведение:
+\[
+u \cdot v = (a \cdot B + b) \cdot (c \cdot B + d) = a \cdot c \cdot B^2 + (a \cdot d + b \cdot c) \cdot B + b \cdot d.
+\]
+Вычислим $(z - x - y)$:
+\[
+z = (a + b) \cdot (c + d) = a \cdot c + a \cdot d + b \cdot c + b \cdot d,
+\]
+\[
+z - x - y = (a \cdot c + a \cdot d + b \cdot c + b \cdot d) - a \cdot c - b \cdot d = a \cdot d + b \cdot c.
+\]
+Подставим в итоговое выражение:
+\[
+x \cdot B^2 + (z - x - y) \cdot B + y = a \cdot c \cdot B^2 + (a \cdot d + b \cdot c) \cdot B + b \cdot d = u \cdot v.
+\]
+Так как $a, b, c, d$ имеют длину не более $\lceil n/2 \rceil < n$, по индукционному предположению $x, y, z$ вычислены корректно. Следовательно, алгоритм возвращает правильный результат.
+\end{proof}
+
+\begin{theorem}[Сложность алгоритма Карацубы]
+\label{thm:complexity}
+Алгоритм Карацубы обладает асимптотической сложностью $O(n^{\log_2 3}) \approx O(n^{1.585})$, где $n$ — длина входных чисел в цифрах системы счисления $sc$~\cite{knuth1997}.
+\end{theorem}
+
+\begin{proof}
+Обозначим $T(n)$ — время работы алгоритма для чисел длиной $n$. Алгоритм выполняет:
+\begin{itemize}
+    \item Определение длины чисел и вычисление $B = sc^{n'}$ за $O(n)$ операций.
+    \item Разбиение чисел на $a, b, c, d$ за $O(n)$ операций.
+    \item Три рекурсивных вызова для чисел длиной $\lceil n/2 \rceil$: $T(\lceil n/2 \rceil)$.
+    \item Вычисление $a + b$, $c + d$ и $z - x - y$ за $O(n)$ операций.
+    \item Сборка результата $x \cdot B^2 + (z - x - y) \cdot B + y$ за $O(n)$ операций.
+\end{itemize}
+
+Рекуррентное соотношение:
+\[
+T(n) = 3T\left(\left\lceil \frac{n}{2} \right\rceil\right) + O(n).
+\]
+Для $n$ — степени двойки: $T(n) = 3T(n/2) + O(n)$. Применяя теорему о рекуррентных уравнениях (Master Theorem)~\cite{cormen2009}, где $a = 3$, $b = 2$, $f(n) = O(n)$, $\log_b a = \log_2 3 \approx 1.585 > 1$, получаем:
+\[
+T(n) = O(n^{\log_2 3}) \approx O(n^{1.585}).
+\]
+Для произвольного $n$ асимптотика сохраняется, так как добавочная константа не влияет на порядок роста.
+\end{proof}
+
+\section{Характеристики машины}
+Тестирование проводилось на компьютере с процессором Intel Core i5 11-го поколения (2.40 ГГц), 8 ГБ оперативной памяти, SSD накопителем WDC PC объёмом 512 ГБ и операционной системой Windows 10. Использовалась система компьютерной алгебры SageMath версии 10.6, обеспечивающая достаточную производительность для анализа алгоритма на больших входных данных.
+
+\section{Сравнение производительности}
+Для оценки производительности алгоритма Карацубы были проведены эксперименты с числами длиной 50, 100, 200 и 250 цифр в десятичной системе счисления ($sc = 10$). Время выполнения измерялось функцией \texttt{timeit} в SageMath, усреднённое по 100 запускам. Результаты сравнения с встроенным умножением SageMath приведены в таблице~\ref{tab:performance}~\cite{cormen2009}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+Размер входа (цифр) & Время алгоритма Карацубы (сек) & Время встроенного умножения (сек) \\
+\hline
+50 & 0.547 & 0.000000105 \\
+100 & 0.154 & 0.000000176 \\
+200 & 0.444 & 0.000000585 \\
+250 & 0.1100 & 0.000000858 \\
+\hline
+\end{tabular}
+\caption{Сравнение времени выполнения}
+\label{tab:performance}
+\end{table}
+
+\section{Заключение}
+Алгоритм Карацубы, предложенный А.\,А.\,Карацубой и Ю.\,П.\,Офманом в 1962 году~\cite{karatsuba1962}, стал важным шагом в развитии теории алгоритмов умножения, снизив сложность с $O(n^2)$ до $O(n^{\log_2 3}) \approx O(n^{1.585})$~\cite{knuth1997}. Эксперименты с числами длиной 50–250 цифр подтвердили его корректность, однако показали значительное отставание по времени выполнения от встроенного умножения SageMath (0.154–0.547 сек против $0.000000105$–$0.000000858$ сек), что объясняется использованием в SageMath оптимизированных библиотек, таких как GMP, и методов на основе быстрого преобразования Фурье~\cite{cormen2009}.
+
+Алгоритм сохраняет теоретическую ценность как первый метод, опровергший гипотезу Колмогорова~\cite{karatsuba1962}, и послужил основой для разработки более совершенных алгоритмов, например, Шёнхаге--Штрассена~\cite{cormen2009}. Он остаётся актуальным для чисел средней длины и в образовательных целях~\cite{knuth1997}. Дальнейшие исследования могут включать тестирование на больших входных данных и оптимизацию реализации.
+
+\begin{thebibliography}{9}
+\bibitem{karatsuba1962}
+  Карацуба А., Офман Ю.
+  Умножение многозначных чисел на автоматах.
+  \emph{Доклады Академии наук СССР}, 145(2):293--294, 1962.
+
+\bibitem{knuth1997}
+  Donald E. Knuth.
+  \emph{The Art of Computer Programming, Volume 2: Seminumerical Algorithms}.
+  Addison-Wesley, 3rd edition, 1997.
+
+\bibitem{cormen2009}
+  Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein.
+  \emph{Introduction to Algorithms}.
+  MIT Press, 3rd edition, 2009.
+\end{thebibliography}
+
+\end{document}
